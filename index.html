@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор стоимости столешниц</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #667eea; min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .header { background: #4472C4; color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .content { padding: 30px; }
+        .section { margin-bottom: 30px; }
+        .section-title { background: #D9E1F2; color: #2E5DA6; padding: 10px; border-radius: 6px; font-weight: bold; margin-bottom: 15px; }
+        .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-group.full { grid-template-columns: 1fr; }
+        .form-item { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 5px; color: #333; font-size: 13px; }
+        input, select { padding: 10px; border: 2px solid #E0E0E0; border-radius: 6px; font-size: 13px; background: #FFF2CC; }
+        input:focus, select:focus { outline: none; border-color: #4472C4; background: #FFFEF0; }
+        .result-field { background: #E2EFDA; border-color: #70AD47; cursor: not-allowed; }
+        .row-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .summary-section { background: #F8F9FA; padding: 20px; border-radius: 8px; margin-top: 30px; border: 2px solid #E0E0E0; }
+        .summary-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #E0E0E0; }
+        .summary-row.subtotal { font-weight: 600; background: #F0F0F0; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .summary-row.total { background: #C6E0B4; padding: 15px; border-radius: 6px; margin-top: 10px; font-size: 18px; font-weight: bold; color: #006100; text-align: center; justify-content: center; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
+        button { padding: 10px 25px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-print { background: #4472C4; color: white; }
+        .btn-print:hover { background: #2E5DA6; }
+        .btn-reset { background: #E0E0E0; color: #333; }
+        .copy-area { background: #F5F5F5; padding: 15px; border-radius: 6px; margin-top: 15px; text-align: center; }
+        .copy-area textarea { width: 100%; height: 120px; padding: 8px; background: white; border: 2px solid #E0E0E0; border-radius: 4px; font-family: monospace; font-size: 11px; margin-top: 8px; }
+        @media print { .button-group, .copy-area { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💎 Калькулятор стоимости</h1>
+            <p>Расчет столешниц из искусственного камня</p>
+        </div>
+        <div class="content">
+            <div class="section">
+                <div class="section-title">1️⃣ ОСНОВНОЕ ИЗДЕЛИЕ</div>
+                <div class="form-group">
+                    <div class="form-item"><label>Тип изделия:</label><select id="productType" onchange="calculate()"><option>-- Выберите --</option><option>Столешница</option><option>Стеновая панель</option><option>Подоконник</option></select></div>
+                    <div class="form-item"><label>Материал:</label><select id="material" onchange="calculate()"><option>-- Выберите --</option><option>Corian</option><option>Hanex</option><option>Neomarm</option><option>Staron</option><option>HI-MACS</option><option>Grandex</option></select></div>
+                </div>
+                <div class="form-group">
+                    <div class="form-item"><label>Группа/Цвет:</label><input type="text" id="group" placeholder="S 008" onchange="calculate()"></div>
+                    <div class="form-item"><label>Цена за 0.5 листа (руб):</label><input type="number" id="materialPrice" placeholder="58000" min="0" onchange="calculate()"></div>
+                </div>
+                <div class="form-group">
+                    <div class="form-item"><label>Площадь (м²):</label><input type="number" id="area" placeholder="3.5" min="0" step="0.1" onchange="calculate()"></div>
+                    <div class="form-item"><label>Стоимость материала (руб):</label><input type="number" id="materialCost" readonly class="result-field"></div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title">2️⃣ КРОМКА И БОРТИК</div>
+                <div class="row-pair"><div class="form-item"><label>Простая кромка (м.п.):</label><input type="number" id="simpleEdgeLength" placeholder="0" min="0" step="0.1" onchange="calculate()"></div><div class="form-item"><label>Цена за м.п. (руб):</label><input type="number" id="simpleEdgePrice" placeholder="0" min="0" onchange="calculate()"></div></div>
+                <div class="row-pair"><div class="form-item"><label>Фигурная кромка (м.п.):</label><input type="number" id="figuredEdgeLength" placeholder="0" min="0" step="0.1" onchange="calculate()"></div><div class="form-item"><label>Цена за м.п. (руб):</label><input type="number" id="figuredEdgePrice" placeholder="0" min="0" onchange="calculate()"></div></div>
+                <div class="row-pair"><div class="form-item"><label>Бортик прямой (м.п.):</label><input type="number" id="bortikLength" placeholder="0" min="0" step="0.1" onchange="calculate()"></div><div class="form-item"><label>Цена за м.п. (руб):</label><input type="number" id="bortikPrice" placeholder="0" min="0" onchange="calculate()"></div></div>
+                <div class="form-group full"><div class="form-item"><label>Стоимость кромки и бортика (руб):</label><input type="number" id="edgeCost" readonly class="result-field"></div></div>
+            </div>
+            <div class="section">
+                <div class="section-title">3️⃣ ДОПОЛНИТЕЛЬНЫЕ ЭЛЕМЕНТЫ</div>
+                <div class="row-pair"><div class="form-item"><label>Вырез ВП (шт):</label><input type="number" id="cutVP" placeholder="0" min="0" onchange="calculate()"></div><div class="form-item"><label>Цена за шт (руб):</label><input type="number" id="cutVPPrice" placeholder="0" min="0" onchange="calculate()"></div></div>
+                <div class="row-pair"><div class="form-item"><label>Вырез М/Р (шт):</label><input type="number" id="cutMR" placeholder="0" min="0" onchange="calculate()"></div><div class="form-item"><label>Цена за шт (руб):</label><input type="number" id="cutMRPrice" placeholder="0" min="0" onchange="calculate()"></div></div>
+                <div class="row-pair"><div class="form-item"><label>Мойка иск. камень (шт):</label><input type="number" id="sink" placeholder="0" min="0" onchange="calculate()"></div><div class="form-item"><label>Цена за шт (руб):</label><input type="number" id="sinkPrice" placeholder="0" min="0" onchange="calculate()"></div></div>
+                <div class="form-group full"><div class="form-item"><label>Стоимость доп. элементов (руб):</label><input type="number" id="extrasCost" readonly class="result-field"></div></div>
+            </div>
+            <div class="section">
+                <div class="section-title">4️⃣ УСЛУГИ</div>
+                <div class="form-group"><div class="form-item"><label>Замер:</label><select id="measurement" onchange="calculate()"><option value="0">Нет</option><option value="1500">Да (1500 руб)</option></select></div><div class="form-item"><label>Доставка:</label><select id="delivery" onchange="calculate()"><option value="0">Нет</option><option value="3400">Да (3400 руб)</option></select></div></div>
+                <div class="row-pair"><div class="form-item"><label>Аквастоп (м.п.):</label><input type="number" id="aquastop" placeholder="0" min="0" step="0.1" onchange="calculate()"></div><div class="form-item"><label>Цена за м.п. (2700 руб):</label><input type="number" id="aquastopPrice" value="2700" readonly class="result-field"></div></div>
+                <div class="form-group full"><div class="form-item"><label>Стоимость услуг (руб):</label><input type="number" id="servicesCost" readonly class="result-field"></div></div>
+            </div>
+            <div class="section">
+                <div class="section-title">5️⃣ СКИДКА</div>
+                <div class="form-group"><div class="form-item"><label>Тип скидки:</label><select id="discount" onchange="calculate()"><option value="0">Без скидки</option><option value="10">Постоянным Диз/Мебельщикам (-10%)</option><option value="7">За наличный расчет (-7%)</option></select></div></div>
+            </div>
+            <div class="summary-section">
+                <div class="summary-row"><span>Материал:</span><span id="summaryMaterial">0 ₽</span></div>
+                <div class="summary-row"><span>Кромка и бортик:</span><span id="summaryEdge">0 ₽</span></div>
+                <div class="summary-row"><span>Дополнительные элементы:</span><span id="summaryExtras">0 ₽</span></div>
+                <div class="summary-row"><span>Услуги:</span><span id="summaryServices">0 ₽</span></div>
+                <div class="summary-row subtotal"><span>Промежуточный итог:</span><span id="subtotal">0 ₽</span></div>
+                <div class="summary-row"><span>Скидка:</span><span id="discountAmount">0 ₽</span></div>
+                <div class="summary-row total">ИТОГО К ОПЛАТЕ: <span id="total">0 ₽</span></div>
+            </div>
+            <div class="button-group">
+                <button class="btn-print" onclick="printCalculator()">🖨️ Печать</button>
+                <button class="btn-reset" onclick="resetCalculator()">🔄 Очистить</button>
+            </div>
+            <div class="copy-area">
+                <strong>📋 Скопируйте расчет:</strong>
+                <textarea id="copyArea" readonly></textarea>
+                <button onclick="copySummary()" style="margin-top: 10px; background: #4472C4; color: white; border: none; border-radius: 6px; padding: 8px 15px; cursor: pointer;">📋 Копировать</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function formatNumber(n) { return Math.round(n).toLocaleString('ru-RU'); }
+        function calculate() {
+            const area = parseFloat(document.getElementById('area').value) || 0;
+            const materialPrice = parseFloat(document.getElementById('materialPrice').value) || 0;
+            const materialCost = area > 0 && materialPrice > 0 ? (area / 1.5) * materialPrice : 0;
+            document.getElementById('materialCost').value = Math.round(materialCost);
+            
+            const edgeLen1 = parseFloat(document.getElementById('simpleEdgeLength').value) || 0;
+            const edgePrice1 = parseFloat(document.getElementById('simpleEdgePrice').value) || 0;
+            const edgeLen2 = parseFloat(document.getElementById('figuredEdgeLength').value) || 0;
+            const edgePrice2 = parseFloat(document.getElementById('figuredEdgePrice').value) || 0;
+            const edgeLen3 = parseFloat(document.getElementById('bortikLength').value) || 0;
+            const edgePrice3 = parseFloat(document.getElementById('bortikPrice').value) || 0;
+            const edgeCost = edgeLen1 * edgePrice1 + edgeLen2 * edgePrice2 + edgeLen3 * edgePrice3;
+            document.getElementById('edgeCost').value = Math.round(edgeCost);
+            
+            const cut1 = parseFloat(document.getElementById('cutVP').value) || 0;
+            const cut1Price = parseFloat(document.getElementById('cutVPPrice').value) || 0;
+            const cut2 = parseFloat(document.getElementById('cutMR').value) || 0;
+            const cut2Price = parseFloat(document.getElementById('cutMRPrice').value) || 0;
+            const sink = parseFloat(document.getElementById('sink').value) || 0;
+            const sinkPrice = parseFloat(document.getElementById('sinkPrice').value) || 0;
+            const extrasCost = cut1 * cut1Price + cut2 * cut2Price + sink * sinkPrice;
+            document.getElementById('extrasCost').value = Math.round(extrasCost);
+            
+            const measure = parseFloat(document.getElementById('measurement').value) || 0;
+            const delivery = parseFloat(document.getElementById('delivery').value) || 0;
+            const aquastop = parseFloat(document.getElementById('aquastop').value) || 0;
+            const servicesCost = measure + delivery + aquastop * 2700;
+            document.getElementById('servicesCost').value = Math.round(servicesCost);
+            
+            const subtotal = materialCost + edgeCost + extrasCost + servicesCost;
+            const discountPercent = parseFloat(document.getElementById('discount').value) || 0;
+            const discountAmount = subtotal * discountPercent / 100;
+            const total = subtotal - discountAmount;
+            
+            document.getElementById('summaryMaterial').textContent = formatNumber(materialCost) + ' ₽';
+            document.getElementById('summaryEdge').textContent = formatNumber(edgeCost) + ' ₽';
+            document.getElementById('summaryExtras').textContent = formatNumber(extrasCost) + ' ₽';
+            document.getElementById('summaryServices').textContent = formatNumber(servicesCost) + ' ₽';
+            document.getElementById('subtotal').textContent = formatNumber(subtotal) + ' ₽';
+            document.getElementById('discountAmount').textContent = formatNumber(discountAmount) + ' ₽';
+            document.getElementById('total').textContent = formatNumber(total) + ' ₽';
+            
+            const text = `СМЕТА\nТип: ${document.getElementById('productType').value}\nМатериал: ${document.getElementById('material').value}\nГруппа: ${document.getElementById('group').value}\nПлощадь: ${document.getElementById('area').value} м²\n\nМатериал: ${formatNumber(materialCost)} ₽\nКромка: ${formatNumber(edgeCost)} ₽\nЭлементы: ${formatNumber(extrasCost)} ₽\nУслуги: ${formatNumber(servicesCost)} ₽\n━━━━━━━━━━━\nИтого: ${formatNumber(subtotal)} ₽\nСкидка: -${formatNumber(discountAmount)} ₽\n━━━━━━━━━━━\nК ОПЛАТЕ: ${formatNumber(total)} ₽`;
+            document.getElementById('copyArea').value = text;
+        }
+        function resetCalculator() {
+            if (confirm('Очистить все?')) {
+                document.querySelectorAll('input, select').forEach(el => { if (!el.classList.contains('result-field')) el.value = ''; });
+                calculate();
+            }
+        }
+        function printCalculator() { window.print(); }
+        function copySummary() {
+            document.getElementById('copyArea').select();
+            document.execCommand('copy');
+            alert('✅ Скопировано!');
+        }
+        calculate();
+    </script>
+</body>
+</html>
