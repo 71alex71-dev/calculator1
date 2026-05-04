@@ -2,7 +2,12 @@ export type ProductType = 'Подоконник' | 'Столешница' | 'С�
 
 export interface Material {
   id: string;
+  brand: string;
+  series: string;
+  code: string;
   name: string;
+  fullName: string;
+  category: 'white' | 'monochrome' | 'small_particles' | 'large_particles' | 'marble' | 'promo';
   sheetPurchasePrice: number;
   sheetSalePrice: number;
   workCostRatePerSqm: number;

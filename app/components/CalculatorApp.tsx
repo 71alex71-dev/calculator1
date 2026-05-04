@@ -8,7 +8,12 @@ const PRODUCT_TYPES: ProductType[] = ['Подоконник', 'Столешни�
 const DEFAULT_MATERIALS: Material[] = [
   {
     id: 'm1',
-    name: 'Grandex P104 Pure White',
+    brand: 'Grandex',
+    series: 'Pure',
+    code: 'P104',
+    name: 'Pure White',
+    fullName: 'Grandex P104 Pure White',
+    category: 'white',
     sheetPurchasePrice: 22000,
     sheetSalePrice: 30000,
     workCostRatePerSqm: 6000,
@@ -16,7 +21,12 @@ const DEFAULT_MATERIALS: Material[] = [
   },
   {
     id: 'm2',
-    name: 'Grandex M713 Whitesand Beach',
+    brand: 'Grandex',
+    series: 'Marble Ocean',
+    code: 'M713',
+    name: 'Whitesand Beach',
+    fullName: 'Grandex M713 Whitesand Beach',
+    category: 'marble',
     sheetPurchasePrice: 32000,
     sheetSalePrice: 45000,
     workCostRatePerSqm: 7000,
@@ -24,7 +34,12 @@ const DEFAULT_MATERIALS: Material[] = [
   },
   {
     id: 'm3',
-    name: 'Grandex M720 Carrara Lunar',
+    brand: 'Grandex',
+    series: 'Marble Ocean',
+    code: 'M720',
+    name: 'Carrara Lunar',
+    fullName: 'Grandex M720 Carrara Lunar',
+    category: 'marble',
     sheetPurchasePrice: 35000,
     sheetSalePrice: 50000,
     workCostRatePerSqm: 8000,
@@ -188,7 +203,7 @@ export default function CalculatorApp({ page }: { page: 'new' | 'materials' | 's
           >
             {materials.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name}
+                {m.fullName}
               </option>
             ))}
           </select>
@@ -279,7 +294,7 @@ function MaterialsView({
           key={m.id}
           className="grid grid-cols-1 gap-3 rounded-xl border p-4 md:grid-cols-3"
         >
-          <div className="font-medium">{m.name}</div>
+          <div className="font-medium">{m.fullName}</div>
 
           <Input
             label="Закупка листа"
