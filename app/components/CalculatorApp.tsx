@@ -148,6 +148,18 @@ const DEFAULT_SERVICES: ServicesInput = {
 };
 
 const formatMoney = (value: number) => `${value.toLocaleString('ru-RU')} ₽`;
+const getCategoryLabel = (category: Material['category']) => {
+  const labels: Record<Material['category'], string> = {
+    white: 'Белый',
+    monochrome: 'Монохромный',
+    small_particles: 'Мелкие вкрапления',
+    large_particles: 'Крупные вкрапления',
+    marble: 'Под мрамор / с разводами',
+    promo: 'Акция',
+  };
+
+  return labels[category];
+};
 
 export default function CalculatorApp({ page }: { page: 'new' | 'materials' | 'summary' | 'message' }) {
   const [materials, setMaterials] = useState<Material[]>(DEFAULT_MATERIALS);
@@ -418,7 +430,7 @@ function MaterialsView({
           <div>
             <div className="font-medium">{m.fullName}</div>
             <div className="text-xs text-slate-500">
-              {m.brand} / {m.series} / {m.code} / {m.category}
+              {m.brand} / {m.series} / {m.code} / {getCategoryLabel(m.category)}
             </div>
           </div>
 
