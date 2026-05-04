@@ -6,38 +6,93 @@ import { calculateOrder, Material, ProductInput, ProductType, ServicesInput } fr
 const PRODUCT_TYPES: ProductType[] = ['Подоконник', 'Столешница', 'Стеновая панель'];
 
 const DEFAULT_MATERIALS: Material[] = [
-  { id: 'm1', name: 'Grandex P104 Pure White', sheetPurchasePrice: 22000, sheetSalePrice: 30000, workCostRatePerSqm: 6000, workSaleRatePerSqm: 12000 },
-  { id: 'm2', name: 'Grandex M713 Whitesand Beach', sheetPurchasePrice: 32000, sheetSalePrice: 45000, workCostRatePerSqm: 7000, workSaleRatePerSqm: 14000 },
-  { id: 'm3', name: 'Grandex M720 Carrara Lunar', sheetPurchasePrice: 35000, sheetSalePrice: 50000, workCostRatePerSqm: 8000, workSaleRatePerSqm: 15000 },
+  {
+    id: 'm1',
+    name: 'Grandex P104 Pure White',
+    sheetPurchasePrice: 22000,
+    sheetSalePrice: 30000,
+    workCostRatePerSqm: 6000,
+    workSaleRatePerSqm: 12000,
+  },
+  {
+    id: 'm2',
+    name: 'Grandex M713 Whitesand Beach',
+    sheetPurchasePrice: 32000,
+    sheetSalePrice: 45000,
+    workCostRatePerSqm: 7000,
+    workSaleRatePerSqm: 14000,
+  },
+  {
+    id: 'm3',
+    name: 'Grandex M720 Carrara Lunar',
+    sheetPurchasePrice: 35000,
+    sheetSalePrice: 50000,
+    workCostRatePerSqm: 8000,
+    workSaleRatePerSqm: 15000,
+  },
 ];
+
+const DEFAULT_SERVICES: ServicesInput = {
+  surveyCost: 3000,
+  surveySalePrice: 5000,
+  deliveryCost: 5000,
+  deliverySalePrice: 7000,
+  installationCost: 8000,
+  installationSalePrice: 12000,
+  discountPercent: 0,
+};
 
 const formatMoney = (value: number) => `${value.toLocaleString('ru-RU')} ₽`;
 
 export default function CalculatorApp({ page }: { page: 'new' | 'materials' | 'summary' | 'message' }) {
   const [materials, setMaterials] = useState<Material[]>(DEFAULT_MATERIALS);
   const [products, setProducts] = useState<ProductInput[]>([]);
-  const [services, setServices] = useState<ServicesInput>({ surveyCost: 3000, surveySalePrice: 5000, deliveryCost: 5000, deliverySalePrice: 7000, installationCost: 8000, installationSalePrice: 12000, discountPercent: 0 });
+  const [services, setServices] = useState<ServicesInput>(DEFAULT_SERVICES);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem('stone-calculator-state');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      setMaterials(parsed.materials ?? DEFAULT_MATERIALS);
-      setProducts(parsed.products ?? []);
-      setServices(parsed.services ?? services);
+    try {
+      const raw = localStorage.getItem('stone-calculator-state');
+
+      if (raw) {
+        const parsed = JSON.parse(raw);
+
+        setMaterials(parsed.materials ?? DEFAULT_MATERIALS);
+        setProducts(parsed.products ?? []);
+        setServices(parsed.services ?? DEFAULT_SERVICES);
+      }
+    } catch (error) {
+      console.error('Failed to load calculator state', error);
+    } finally {
+      setIsLoaded(true);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('stone-calculator-state', JSON.stringify({ materials, products, services }));
-  }, [materials, products, services]);
+    if (!isLoaded) return;
 
-  const calculation = useMemo(() => calculateOrder(products, materials, services), [products, materials, services]);
+    localStorage.setItem(
+      'stone-calculator-state',
+      JSON.stringify({ materials, products, services }),
+    );
+  }, [isLoaded, materials, products, services]);
+
+  const calculation = useMemo(
+    () => calculateOrder(products, materials, services),
+    [products, materials, services],
+  );
 
   const addProduct = () => {
     setProducts((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), type: 'Подоконник', lengthMm: 1000, widthMm: 600, quantity: 1, materialId: materials[0]?.id ?? '' },
+      {
+        id: crypto.randomUUID(),
+        type: 'Подоконник',
+        lengthMm: 1000,
+        widthMm: 300,
+        quantity: 1,
+        materialId: materials[0]?.id ?? '',
+      },
     ]);
   };
 
@@ -57,51 +112,314 @@ export default function CalculatorApp({ page }: { page: 'new' | 'materials' | 's
     <section className="space-y-4 rounded-2xl bg-white p-6 shadow">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Новый расчёт</h2>
-        <button onClick={addProduct} className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Добавить изделие</button>
+        <button
+          onClick={addProduct}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          Добавить изделие
+        </button>
       </div>
 
-      {products.length === 0 && <p className="text-slate-500">Добавьте минимум одно изделие в заказ.</p>}
+      {products.length === 0 && (
+        <p className="text-slate-500">Добавьте минимум одно изделие в заказ.</p>
+      )}
+
       {products.map((item, index) => (
-        <div key={item.id} className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 p-4 md:grid-cols-4">
-          <select value={item.type} onChange={(e) => setProducts((prev) => prev.map((p) => (p.id === item.id ? { ...p, type: e.target.value as ProductType } : p)))} className="rounded-lg border p-2">
-            {PRODUCT_TYPES.map((t) => <option key={t}>{t}</option>)}
+        <div
+          key={item.id}
+          className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 p-4 md:grid-cols-4"
+        >
+          <select
+            value={item.type}
+            onChange={(e) =>
+              setProducts((prev) =>
+                prev.map((p) =>
+                  p.id === item.id ? { ...p, type: e.target.value as ProductType } : p,
+                ),
+              )
+            }
+            className="rounded-lg border p-2"
+          >
+            {PRODUCT_TYPES.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
           </select>
-          <Input label="Длина (мм)" value={item.lengthMm} onChange={(v) => setProducts((prev) => prev.map((p) => (p.id === item.id ? { ...p, lengthMm: v } : p)))} />
-          <Input label="Ширина (мм)" value={item.widthMm} onChange={(v) => setProducts((prev) => prev.map((p) => (p.id === item.id ? { ...p, widthMm: v } : p)))} />
-          <Input label="Количество" value={item.quantity} onChange={(v) => setProducts((prev) => prev.map((p) => (p.id === item.id ? { ...p, quantity: v } : p)))} />
-          <select value={item.materialId} onChange={(e) => setProducts((prev) => prev.map((p) => (p.id === item.id ? { ...p, materialId: e.target.value } : p)))} className="rounded-lg border p-2 md:col-span-3">
-            {materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+
+          <Input
+            label="Длина (мм)"
+            value={item.lengthMm}
+            onChange={(v) =>
+              setProducts((prev) =>
+                prev.map((p) => (p.id === item.id ? { ...p, lengthMm: v } : p)),
+              )
+            }
+          />
+
+          <Input
+            label="Ширина (мм)"
+            value={item.widthMm}
+            onChange={(v) =>
+              setProducts((prev) =>
+                prev.map((p) => (p.id === item.id ? { ...p, widthMm: v } : p)),
+              )
+            }
+          />
+
+          <Input
+            label="Количество"
+            value={item.quantity}
+            onChange={(v) =>
+              setProducts((prev) =>
+                prev.map((p) => (p.id === item.id ? { ...p, quantity: v } : p)),
+              )
+            }
+          />
+
+          <select
+            value={item.materialId}
+            onChange={(e) =>
+              setProducts((prev) =>
+                prev.map((p) =>
+                  p.id === item.id ? { ...p, materialId: e.target.value } : p,
+                ),
+              )
+            }
+            className="rounded-lg border p-2 md:col-span-3"
+          >
+            {materials.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
           </select>
-          <button onClick={() => setProducts((prev) => prev.filter((p) => p.id !== item.id))} className="rounded-lg bg-rose-100 px-3 py-2 text-rose-700">Удалить #{index + 1}</button>
+
+          <button
+            onClick={() => setProducts((prev) => prev.filter((p) => p.id !== item.id))}
+            className="rounded-lg bg-rose-100 px-3 py-2 text-rose-700"
+          >
+            Удалить #{index + 1}
+          </button>
         </div>
       ))}
 
       <div className="grid gap-3 rounded-xl border border-slate-200 p-4 md:grid-cols-4">
-        <Input label="Замер" value={services.surveySalePrice} onChange={(v) => setServices((s) => ({ ...s, surveySalePrice: v }))} />
-        <Input label="Доставка" value={services.deliverySalePrice} onChange={(v) => setServices((s) => ({ ...s, deliverySalePrice: v }))} />
-        <Input label="Монтаж" value={services.installationSalePrice} onChange={(v) => setServices((s) => ({ ...s, installationSalePrice: v }))} />
-        <Input label="Скидка (%)" value={services.discountPercent} onChange={(v) => setServices((s) => ({ ...s, discountPercent: v }))} />
+        <Input
+          label="Замер"
+          value={services.surveySalePrice}
+          onChange={(v) => setServices((s) => ({ ...s, surveySalePrice: v }))}
+        />
+
+        <Input
+          label="Доставка"
+          value={services.deliverySalePrice}
+          onChange={(v) => setServices((s) => ({ ...s, deliverySalePrice: v }))}
+        />
+
+        <Input
+          label="Монтаж"
+          value={services.installationSalePrice}
+          onChange={(v) => setServices((s) => ({ ...s, installationSalePrice: v }))}
+        />
+
+        <Input
+          label="Скидка (%)"
+          value={services.discountPercent}
+          onChange={(v) => setServices((s) => ({ ...s, discountPercent: v }))}
+        />
       </div>
 
       <div className="rounded-xl bg-slate-50 p-4">
-        <p className="text-sm">Предварительный итог: <strong>{formatMoney(calculation.finalClientPrice)}</strong></p>
+        <p className="text-sm">
+          Предварительный итог: <strong>{formatMoney(calculation.finalClientPrice)}</strong>
+        </p>
       </div>
     </section>
   );
 }
 
-function Input({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
-  return <label className="text-sm">{label}<input className="mt-1 w-full rounded-lg border p-2" type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} /></label>;
+function Input({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="text-sm">
+      {label}
+      <input
+        className="mt-1 w-full rounded-lg border p-2"
+        type="number"
+        value={Number.isFinite(value) ? String(value) : ''}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => {
+          const nextValue = e.target.value;
+          onChange(nextValue === '' ? 0 : Number(nextValue));
+        }}
+      />
+    </label>
+  );
 }
 
-function MaterialsView({ materials, setMaterials }: { materials: Material[]; setMaterials: (materials: Material[]) => void }) {
-  return <section className="space-y-3 rounded-2xl bg-white p-6 shadow"><h2 className="text-xl font-semibold">Справочник материалов</h2>{materials.map((m) => <div key={m.id} className="grid grid-cols-1 gap-3 rounded-xl border p-4 md:grid-cols-3"><div className="font-medium">{m.name}</div><Input label="Закупка листа" value={m.sheetPurchasePrice} onChange={(v) => setMaterials(materials.map((x) => (x.id === m.id ? { ...x, sheetPurchasePrice: v } : x)))} /><Input label="Продажа листа" value={m.sheetSalePrice} onChange={(v) => setMaterials(materials.map((x) => (x.id === m.id ? { ...x, sheetSalePrice: v } : x)))} /><Input label="Работа себестоимость м²" value={m.workCostRatePerSqm} onChange={(v) => setMaterials(materials.map((x) => (x.id === m.id ? { ...x, workCostRatePerSqm: v } : x)))} /><Input label="Работа продажа м²" value={m.workSaleRatePerSqm} onChange={(v) => setMaterials(materials.map((x) => (x.id === m.id ? { ...x, workSaleRatePerSqm: v } : x)))} /></div>)}</section>;
+function MaterialsView({
+  materials,
+  setMaterials,
+}: {
+  materials: Material[];
+  setMaterials: (materials: Material[]) => void;
+}) {
+  return (
+    <section className="space-y-3 rounded-2xl bg-white p-6 shadow">
+      <h2 className="text-xl font-semibold">Справочник материалов</h2>
+
+      {materials.map((m) => (
+        <div
+          key={m.id}
+          className="grid grid-cols-1 gap-3 rounded-xl border p-4 md:grid-cols-3"
+        >
+          <div className="font-medium">{m.name}</div>
+
+          <Input
+            label="Закупка листа"
+            value={m.sheetPurchasePrice}
+            onChange={(v) =>
+              setMaterials(
+                materials.map((x) => (x.id === m.id ? { ...x, sheetPurchasePrice: v } : x)),
+              )
+            }
+          />
+
+          <Input
+            label="Продажа листа"
+            value={m.sheetSalePrice}
+            onChange={(v) =>
+              setMaterials(
+                materials.map((x) => (x.id === m.id ? { ...x, sheetSalePrice: v } : x)),
+              )
+            }
+          />
+
+          <Input
+            label="Работа себестоимость м²"
+            value={m.workCostRatePerSqm}
+            onChange={(v) =>
+              setMaterials(
+                materials.map((x) =>
+                  x.id === m.id ? { ...x, workCostRatePerSqm: v } : x,
+                ),
+              )
+            }
+          />
+
+          <Input
+            label="Работа продажа м²"
+            value={m.workSaleRatePerSqm}
+            onChange={(v) =>
+              setMaterials(
+                materials.map((x) =>
+                  x.id === m.id ? { ...x, workSaleRatePerSqm: v } : x,
+                ),
+              )
+            }
+          />
+        </div>
+      ))}
+    </section>
+  );
 }
 
 function SummaryView({ calculation }: { calculation: ReturnType<typeof calculateOrder> }) {
-  return <section className="space-y-4 rounded-2xl bg-white p-6 shadow"><h2 className="text-xl font-semibold">Итог расчёта</h2><div className="overflow-auto"><table className="w-full text-sm"><thead><tr className="text-left"><th>Изделие</th><th>Площадь</th><th>Листы</th><th>Материал</th><th>Работа</th></tr></thead><tbody>{calculation.items.map((i) => <tr key={i.id} className="border-t"><td>{i.type}</td><td>{i.area} м²</td><td>{i.materialSheetsPurchased}</td><td>{formatMoney(i.materialSalePrice)}</td><td>{formatMoney(i.workSalePrice)}</td></tr>)}</tbody></table></div><div className="grid gap-2 rounded-xl bg-slate-50 p-4 text-sm"><p>Общая площадь: <b>{calculation.totalArea} м²</b></p><p>Количество листов: <b>{calculation.totalMaterialSheetsRaw}</b> (закупка: {calculation.totalMaterialSheetsPurchased})</p><p>Материал (продажа): <b>{formatMoney(calculation.materialSalePrice)}</b></p><p>Работа (продажа): <b>{formatMoney(calculation.workSalePrice)}</b></p><p>Монтаж (продажа): <b>{formatMoney(calculation.installationSalePrice)}</b></p><p>Доставка (продажа): <b>{formatMoney(calculation.deliverySalePrice)}</b></p><p>Замер (продажа): <b>{formatMoney(calculation.surveySalePrice)}</b></p><p>Цена до скидки: <b>{formatMoney(calculation.preDiscountClientPrice)}</b></p><p>Скидка: <b>{formatMoney(calculation.discountAmount)}</b></p><p>Итоговая цена клиенту: <b>{formatMoney(calculation.finalClientPrice)}</b></p><p>Себестоимость: <b>{formatMoney(calculation.totalCost)}</b></p><p>Прибыль: <b>{formatMoney(calculation.profit)}</b></p><p>Маржинальность: <b>{calculation.marginPercent}%</b></p></div></section>;
+  return (
+    <section className="space-y-4 rounded-2xl bg-white p-6 shadow">
+      <h2 className="text-xl font-semibold">Итог расчёта</h2>
+
+      <div className="overflow-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left">
+              <th>Изделие</th>
+              <th>Площадь</th>
+              <th>Листы</th>
+              <th>Материал</th>
+              <th>Работа</th>
+            </tr>
+          </thead>
+          <tbody>
+            {calculation.items.map((i) => (
+              <tr key={i.id} className="border-t">
+                <td>{i.type}</td>
+                <td>{i.area} м²</td>
+                <td>{i.materialSheetsPurchased}</td>
+                <td>{formatMoney(i.materialSalePrice)}</td>
+                <td>{formatMoney(i.workSalePrice)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid gap-2 rounded-xl bg-slate-50 p-4 text-sm">
+        <p>
+          Общая площадь: <b>{calculation.totalArea} м²</b>
+        </p>
+        <p>
+          Количество листов: <b>{calculation.totalMaterialSheetsRaw}</b> закупка:{' '}
+          <b>{calculation.totalMaterialSheetsPurchased}</b>
+        </p>
+        <p>
+          Материал продажа: <b>{formatMoney(calculation.materialSalePrice)}</b>
+        </p>
+        <p>
+          Работа продажа: <b>{formatMoney(calculation.workSalePrice)}</b>
+        </p>
+        <p>
+          Монтаж продажа: <b>{formatMoney(calculation.installationSalePrice)}</b>
+        </p>
+        <p>
+          Доставка продажа: <b>{formatMoney(calculation.deliverySalePrice)}</b>
+        </p>
+        <p>
+          Замер продажа: <b>{formatMoney(calculation.surveySalePrice)}</b>
+        </p>
+        <p>
+          Цена до скидки: <b>{formatMoney(calculation.preDiscountClientPrice)}</b>
+        </p>
+        <p>
+          Скидка: <b>{formatMoney(calculation.discountAmount)}</b>
+        </p>
+        <p>
+          Итоговая цена клиенту: <b>{formatMoney(calculation.finalClientPrice)}</b>
+        </p>
+        <p>
+          Себестоимость: <b>{formatMoney(calculation.totalCost)}</b>
+        </p>
+        <p>
+          Прибыль: <b>{formatMoney(calculation.profit)}</b>
+        </p>
+        <p>
+          Маржинальность: <b>{calculation.marginPercent}%</b>
+        </p>
+      </div>
+    </section>
+  );
 }
 
 function MessageView({ total }: { total: number }) {
-  return <section className="rounded-2xl bg-white p-6 shadow"><h2 className="mb-3 text-xl font-semibold">Сообщение клиенту</h2><p className="whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm">Здравствуйте!\n\nПодготовили расчёт по вашему заказу из искусственного камня.\nИтоговая стоимость составила: {formatMoney(total)}.\n\nВ стоимость включены материалы, изготовление, доставка, замер и монтаж.\nГотовы обсудить детали и согласовать удобную дату запуска в работу.</p></section>;
+  return (
+    <section className="rounded-2xl bg-white p-6 shadow">
+      <h2 className="mb-3 text-xl font-semibold">Сообщение клиенту</h2>
+
+      <p className="whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm">
+        {`Здравствуйте!
+
+Подготовили расчёт по вашему заказу из искусственного камня.
+Итоговая стоимость составила: ${formatMoney(total)}.
+
+В стоимость включены материалы, изготовление, доставка, замер и монтаж.
+Готовы обсудить детали и согласовать удобную дату запуска в работу.`}
+      </p>
+    </section>
+  );
 }
