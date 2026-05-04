@@ -105,7 +105,7 @@ export default function CalculatorApp({ page }: { page: 'new' | 'materials' | 's
   }
 
   if (page === 'message') {
-    return <MessageView total={calculation.finalClientPrice} />;
+    return <MessageView products={products} materials={materials} calculation={calculation} />;
   }
 
   return (
@@ -406,20 +406,57 @@ function SummaryView({ calculation }: { calculation: ReturnType<typeof calculate
   );
 }
 
-function MessageView({ total }: { total: number }) {
+function MessageView({
+  products,
+  materials,
+  calculation,
+}: {
+  products: ProductInput[];
+  materials: Material[];
+  calculation: ReturnType<typeof calculateOrder>;
+}) {
+  const productLines = products.map((product, index) => {
+    const material = materials.find((m) => m.id === product.materialId);
+    const calculatedItem = calculation.items[index];
+
+    return `— ${product.type} ${product.lengthMm} × ${product.widthMm} мм — ${product.quantity} шт., материал: ${
+      material?.name ?? 'не выбран'
+    }, стоимость: ${formatMoney((calculatedItem?.materialSalePrice ?? 0) + (calculatedItem?.workSalePrice ?? 0))}`;
+  });
+
+  const message = `Здравствуйте!
+
+Подготовили предварительный расчёт изделий из искусственного камня.
+
+Изделия:
+${productLines.length > 0 ? productLines.join('\n') : '— изделия не добавлены'}
+
+Материал и изготовление: ${formatMoney(calculation.materialSalePrice + calculation.workSalePrice)}
+Замер: ${formatMoney(calculation.surveySalePrice)}
+Доставка: ${formatMoney(calculation.deliverySalePrice)}
+Монтаж: ${formatMoney(calculation.installationSalePrice)}
+${calculation.discountAmount > 0 ? `Скидка: ${formatMoney(calculation.discountAmount)}\n` : ''}Итого: ${formatMoney(calculation.finalClientPrice)}
+
+Расчёт предварительный. Точная стоимость зависит от выбранного материала, кромки, вырезов и особенностей монтажа.`;
+
+  const copyMessage = async () => {
+    await navigator.clipboard.writeText(message);
+    alert('Сообщение скопировано');
+  };
+
   return (
-    <section className="rounded-2xl bg-white p-6 shadow">
-      <h2 className="mb-3 text-xl font-semibold">Сообщение клиенту</h2>
+    <section className="space-y-4 rounded-2xl bg-white p-6 shadow">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Сообщение клиенту</h2>
+        <button
+          onClick={copyMessage}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          Скопировать
+        </button>
+      </div>
 
-      <p className="whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm">
-        {`Здравствуйте!
-
-Подготовили расчёт по вашему заказу из искусственного камня.
-Итоговая стоимость составила: ${formatMoney(total)}.
-
-В стоимость включены материалы, изготовление, доставка, замер и монтаж.
-Готовы обсудить детали и согласовать удобную дату запуска в работу.`}
-      </p>
+      <p className="whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm">{message}</p>
     </section>
   );
 }
