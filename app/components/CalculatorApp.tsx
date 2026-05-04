@@ -101,7 +101,7 @@ export default function CalculatorApp({ page }: { page: 'new' | 'materials' | 's
   }
 
   if (page === 'summary') {
-    return <SummaryView calculation={calculation} />;
+    return <SummaryView calculation={calculation} products={products} />;
   }
 
   if (page === 'message') {
@@ -330,7 +330,15 @@ function MaterialsView({
   );
 }
 
-function SummaryView({ calculation }: { calculation: ReturnType<typeof calculateOrder> }) {
+function SummaryView({
+  calculation,
+  products,
+}: {
+  calculation: ReturnType<typeof calculateOrder>;
+  products: ProductInput[];
+}) {
+  const findProduct = (id: string) => products.find((product) => product.id === id);
+
   return (
     <section className="space-y-4 rounded-2xl bg-white p-6 shadow">
       <h2 className="text-xl font-semibold">Итог расчёта</h2>
@@ -340,6 +348,8 @@ function SummaryView({ calculation }: { calculation: ReturnType<typeof calculate
           <thead>
             <tr className="text-left">
               <th>Изделие</th>
+              <th>Размер</th>
+              <th>Кол-во</th>
               <th>Площадь</th>
               <th>Листы</th>
               <th>Материал</th>
@@ -347,15 +357,25 @@ function SummaryView({ calculation }: { calculation: ReturnType<typeof calculate
             </tr>
           </thead>
           <tbody>
-            {calculation.items.map((i) => (
-              <tr key={i.id} className="border-t">
-                <td>{i.type}</td>
-                <td>{i.area} м²</td>
-                <td>{i.materialSheetsPurchased}</td>
-                <td>{formatMoney(i.materialSalePrice)}</td>
-                <td>{formatMoney(i.workSalePrice)}</td>
-              </tr>
-            ))}
+            {calculation.items.map((i) => {
+              const product = findProduct(i.id);
+
+              return (
+                <tr key={i.id} className="border-t">
+                  <td>{i.type}</td>
+                  <td>
+                    {product
+                      ? `${product.lengthMm} × ${product.widthMm} мм`
+                      : '—'}
+                  </td>
+                  <td>{product?.quantity ?? '—'}</td>
+                  <td>{i.area} м²</td>
+                  <td>{i.materialSheetsPurchased}</td>
+                  <td>{formatMoney(i.materialSalePrice)}</td>
+                  <td>{formatMoney(i.workSalePrice)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -405,7 +425,6 @@ function SummaryView({ calculation }: { calculation: ReturnType<typeof calculate
     </section>
   );
 }
-
 function MessageView({
   products,
   materials,
