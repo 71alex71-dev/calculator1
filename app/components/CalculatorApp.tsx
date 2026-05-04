@@ -375,16 +375,52 @@ function MaterialsView({
   materials: Material[];
   setMaterials: (materials: Material[]) => void;
 }) {
+  const [search, setSearch] = useState('');
+
+  const filteredMaterials = materials.filter((material) => {
+    const query = search.toLowerCase().trim();
+
+    if (!query) return true;
+
+    return [
+      material.brand,
+      material.series,
+      material.code,
+      material.name,
+      material.fullName,
+      material.category,
+    ]
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
+  });
+
   return (
     <section className="space-y-3 rounded-2xl bg-white p-6 shadow">
       <h2 className="text-xl font-semibold">Справочник материалов</h2>
 
-      {materials.map((m) => (
+      <input
+        className="w-full rounded-lg border p-3 text-sm"
+        placeholder="Поиск: Grandex, P104, Pure White, marble..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      <p className="text-sm text-slate-500">
+        Найдено материалов: {filteredMaterials.length}
+      </p>
+
+      {filteredMaterials.map((m) => (
         <div
           key={m.id}
           className="grid grid-cols-1 gap-3 rounded-xl border p-4 md:grid-cols-3"
         >
-          <div className="font-medium">{m.fullName}</div>
+          <div>
+            <div className="font-medium">{m.fullName}</div>
+            <div className="text-xs text-slate-500">
+              {m.brand} / {m.series} / {m.code} / {m.category}
+            </div>
+          </div>
 
           <Input
             label="Закупка листа"
@@ -434,7 +470,6 @@ function MaterialsView({
     </section>
   );
 }
-
 function SummaryView({
   calculation,
   products,
